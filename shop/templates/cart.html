@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="container my-4">
+  <h3 class="mb-4">My Cart</h3>
+  <div class="row">
+    <!-- Left: Cart Items -->
+    <div class="col-md-8">
+      {% for item in cart_items %}
+      <div class="card mb-3 shadow-sm">
+        <div class="row g-0">
+          <div class="col-md-3 text-center">
+            <img src="{{ item.product.image.url }}" class="img-fluid p-3" alt="{{ item.product.name }}">
+          </div>
+          <div class="col-md-9">
+            <div class="card-body">
+              <h5 class="card-title">{{ item.product.name }}</h5>
+              <p class="text-muted">{{ item.product.description|truncatechars:80 }}</p>
+              <h6 class="text-success">₹{{ item.product.price }}</h6>
+              <div class="d-flex align-items-center mb-2">
+                <form method="post" action="{% url 'update_cart' %}" class="d-flex align-items-center">
+                  {% csrf_token %}
+                  <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                  <button type="submit" name="action" value="decrease" class="btn btn-sm btn-outline-secondary">−</button>
+                  <input type="number" name="quantity" value="{{ item.quantity }}" class="form-control mx-1 text-center" style="width: 60px;" min="1">
+                  <button type="submit" name="action" value="increase" class="btn btn-sm btn-outline-secondary">+</button>
+                </form>
+              </div>
+              <div class="mt-3">
+                <form method="post" action="{% url 'update_cart' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                  <button name="action" value="save_for_later" class="btn btn-sm btn-outline-dark">Save for Later</button>
+                  <button name="action" value="remove" class="btn btn-sm btn-outline-danger">Remove</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Right: Price Summary -->
+    <div class="col-md-4">
+      <div class="card p-3 shadow-sm">
+        <h5 class="border-bottom pb-2">PRICE DETAILS</h5>
+        <div class="d-flex justify-content-between">
+          <span>Price ({{ cart_items|length }} items)</span>
+          <span>₹{{ total_price }}</span>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span>Discount</span>
+          <span class="text-success">− ₹{{ discount }}</span>
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between fw-bold">
+          <span>Total Amount</span>
+          <span>₹{{final_total}}</span>
+        </div>
+        <p class="text-success mt-2">You will save ₹{{ discount }} on this order</p>
+        <a href="{% url 'checkout' %}" class="btn btn-warning w-100 mt-3">PLACE ORDER</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Saved for Later Section -->
+  {% if wishlist_items %}
+  <div class="mt-5">
+    <h4 class="mb-3">Saved For Later ({{ wishlist_items|length }})</h4>
+    {% for item in wishlist_items %}
+    <div class="card mb-3 shadow-sm">
+      <div class="row g-0">
+        <div class="col-md-3 text-center">
+          <img src="{{ item.product.image.url }}" class="img-fluid p-3" alt="{{ item.product.name }}">
+        </div>
+        <div class="col-md-9">
+          <div class="card-body">
+            <h5 class="card-title">{{ item.product.name }}</h5>
+            <p class="text-muted">{{ item.product.description|truncatechars:80 }}</p>
+            <h6 class="text-success">₹{{ item.product.price }}</h6>
+            <form method="post" action="{% url 'wishlist_action' %}" class="d-flex gap-2 mt-2">
+              {% csrf_token %}
+              <input type="hidden" name="product_id" value="{{ item.product.id }}">
+              <button name="action" value="move_to_cart" class="btn btn-sm btn-success">Move to Cart</button>
+              <button name="action" value="remove" class="btn btn-sm btn-danger">Remove</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  function updateTotals() {
+    let total = 0;
+    document.querySelectorAll(".card-body").forEach(card => {
+      const price = parseFloat(card.querySelector("h6.text-success").innerText.replace("₹", ""));
+      const qty = parseInt(card.querySelector(".quantity-input").value);
+      total += price * qty;
+    });
+    const discount = total * 0.1;
+    const finalTotal = total - discount;
+
+    document.querySelector(".price-details-total").textContent = `₹${total.toFixed(2)}`;
+    document.querySelector(".price-details-discount").textContent = `− ₹${discount.toFixed(2)}`;
+    document.querySelector(".price-details-final").textContent = `₹${finalTotal.toFixed(2)}`;
+    document.querySelector(".price-details-savings").textContent = `You will save ₹${discount.toFixed(2)} on this order`;
+  }
+
+  // Quantity +/-
+  document.querySelectorAll(".update-quantity-form").forEach(container => {
+    const productId = container.getAttribute("data-product-id");
+    const input = container.querySelector(".quantity-input");
+    const decreaseBtn = container.querySelector(".btn-decrease");
+    const increaseBtn = container.querySelector(".btn-increase");
+
+    function sendUpdate(action) {
+      fetch("{% url 'update_cart' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: `product_id=${productId}&action=${action}`
+      }).then(res => {
+        if (res.ok) {
+          if (action === "increase") input.value = parseInt(input.value) + 1;
+          if (action === "decrease" && parseInt(input.value) > 1) input.value = parseInt(input.value) - 1;
+          updateTotals();
+        }
+      });
+    }
+
+    decreaseBtn.addEventListener("click", () => sendUpdate("decrease"));
+    increaseBtn.addEventListener("click", () => sendUpdate("increase"));
+  });
+
+  updateTotals();
+});
+</script>
+
+
+{% endblock %}
+

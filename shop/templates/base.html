@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ANJAC Appliances</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body { background: #f1f3f6; }
+    .navbar-custom { background-color: #2874f0; }
+    .navbar-brand img { height: 32px; }
+    .search-box {
+      width: 100%;
+      max-width: 500px;
+      background-color: white;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .search-box input {
+      border: none;
+      width: 100%;
+      padding: 8px 12px;
+    }
+    .search-box input:focus {
+      outline: none;
+      box-shadow: none;
+    }
+    .nav-icon {
+      color: white;
+      font-size: 18px;
+      margin-right: 6px;
+    }
+    .badge-notify {
+      background: red;
+      position: absolute;
+      top: 2px;
+      right: -4px;
+      font-size: 10px;
+    }
+    .text-white {
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-2">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand d-flex align-items-center" href="/">
+        <img src="/media/products/anjac-logo.png" width="50" height="50" alt="ANJAC Logo" class="" />
+        <span class="text-white fw-bold">ANJAC</span>
+      </a>
+
+      <!-- Search Bar -->
+      <form action="{% url 'home' %}" method="get" class="search-box mx-3 flex-grow-1">
+        <input type="text" name="q" placeholder="Search for Products, Brands and More" value="{{ request.GET.q }}">
+      </form>
+
+      <!-- Right Menu -->
+      <div class="d-flex align-items-center gap-4">
+        {% if user.is_authenticated %}
+          <div class="dropdown">
+            <a href="#" class="text-white dropdown-toggle" data-bs-toggle="dropdown">
+              <i class="fa-regular fa-user nav-icon"></i> {{ user.username }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="{% url 'orders' %}">My Orders</a></li>
+              <li>
+                <form method="POST" action="{% url 'logout' %}">
+                  {% csrf_token %}
+                  <button class="dropdown-item" type="submit">Logout</button>
+                </form>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Cart Icon with Badge -->
+          <a href="{% url 'cart' %}" class="position-relative text-white">
+            <i class="fa-solid fa-cart-shopping nav-icon"></i> Cart
+            {% if cart_count > 0 %}
+              <span class="badge badge-notify rounded-pill">{{ cart_count }}</span>
+            {% endif %}
+          </a>
+
+        {% else %}
+          <a href="{% url 'login' %}" class="text-white">Login</a>
+          <a href="{% url 'register' %}" class="text-white">Register</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container mt-4">
+    {% block content %}{% endblock %}
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+  <!-- Toast Notification Container -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
+  <div id="toastMsg" class="toast align-items-center text-white bg-success border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body">
+        {% for message in messages %}
+          {{ message }}
+        {% endfor %}
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+
+{% if messages %}
+<script>
+  window.onload = function () {
+    var toastLive = document.getElementById('toastMsg');
+    var toast = new bootstrap.Toast(toastLive);
+    toast.show();
+  };
+</script>
+{% endif %}
+
+</body>
+</html>

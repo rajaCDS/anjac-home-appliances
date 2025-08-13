@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load order_tags %}
+{% block content %}
+
+<div class="container-fluid mt-4">
+  <div class="row">
+    <!-- Sidebar Filters -->
+    <div class="col-md-3">
+      <div class="border rounded p-3 shadow-sm">
+        <h5>Filters</h5>
+        <hr>
+        <div class="mb-3">
+          <h6 class="text-muted">ORDER STATUS</h6>
+          <div><input type="checkbox"> On the way</div>
+          <div><input type="checkbox"> Delivered</div>
+          <div><input type="checkbox"> Cancelled</div>
+          <div><input type="checkbox"> Returned</div>
+        </div>
+        <div>
+          <h6 class="text-muted">ORDER TIME</h6>
+          <div><input type="checkbox"> Last 30 days</div>
+          <div><input type="checkbox"> 2024</div>
+          <div><input type="checkbox"> 2023</div>
+          <div><input type="checkbox"> 2022</div>
+          <div><input type="checkbox"> 2021</div>
+          <div><input type="checkbox"> Older</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Orders List -->
+    <div class="col-md-9">
+      <div class="input-group mb-4">
+        <input type="text" class="form-control" placeholder="Search your orders here">
+        <button class="btn btn-primary"><i class="bi bi-search"></i> Search Orders</button>
+      </div>
+
+      {% if orders %}
+        {% for order in orders %}
+  <div class="card shadow-sm border mb-4">
+    <div class="card-body">
+
+      <div class="d-flex justify-content-between mb-2">
+        <strong>Order #{{ order.order_id }}</strong>
+        <span>Total: ₹{{ order.total_amount }}</span>
+      </div>
+
+      {% for product in order.items %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="d-flex gap-3 align-items-center">
+            <img src="{{ product.image_url }}" width="60" height="60" alt="Product" class="rounded border" />
+            <div>
+              <h6 class="mb-1">{{ product.product_name }}</h6>
+              <small class="text-muted">
+                Color: {{ product.color }}{% if product.size %}, Size: {{ product.size }}{% endif %}
+              </small>
+            </div>
+          </div>
+
+          <div class="text-end">
+            {% if order.order_status == 'Delivered' %}
+              <p class="text-success mb-0 fw-semibold">🟢 Delivered on {{ order.delivery_date|date:"M d" }}</p>
+              <a href="#" class="btn btn-sm btn-outline-primary mt-1">⭐ Rate & Review Product</a>
+            {% else %}
+              <p class="text-info mb-0 fw-semibold">🟢 Delivery expected by {{ order.delivery_date|date:"M d" }}</p>
+              <small class="text-muted">Your item has been {{ order.order_status|lower }}</small>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+
+    </div>
+  </div>
+{% endfor %}
+
+      {% else %}
+        <div class="alert alert-info text-center">You have no orders yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+  .card:hover {
+    box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.05);
+  }
+
+  .btn-outline-primary {
+    font-size: 14px;
+    padding: 4px 12px;
+  }
+
+  .form-control::placeholder {
+    font-style: italic;
+    color: #999;
+  }
+</style>
+
+{% endblock %}

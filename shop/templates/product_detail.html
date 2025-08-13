@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <div class="row bg-white shadow-sm rounded p-4">
+    <!-- Left: Product Image -->
+    <div class="col-md-5 text-center">
+      <img src="{{ product.image.url }}" class="img-fluid border rounded" style="max-height: 400px;" alt="{{ product.name }}">
+      <div class="mt-2 text-muted">Roll over image to zoom</div>
+    </div>
+
+    <!-- Right: Product Details -->
+    <div class="col-md-7">
+      <h3 class="fw-bold">{{ product.name }}</h3>
+
+      <!-- Star Ratings -->
+      <div class="text-warning mb-2">
+        ⭐⭐⭐⭐☆ <small class="text-muted">(1,245 ratings)</small>
+      </div>
+
+      <!-- Price & Offer -->
+      <div class="mb-3">
+        <h4 class="text-success fw-bold">₹{{ product.price }}</h4>
+        <p class="mb-1"><del class="text-muted">₹{{ product.price|add:"500" }}</del> <span class="text-danger">10% off</span></p>
+        <p class="text-muted">Inclusive of all taxes</p>
+      </div>
+
+      <!-- Offers -->
+      <div class="mb-3">
+        <h6 class="fw-semibold">Available Offers:</h6>
+        <ul class="list-unstyled text-success small">
+          <li>✔ 10% Instant Discount on UPI Payments</li>
+          <li>✔ ₹100 off on first purchase</li>
+          <li>✔ No-cost EMI Available</li>
+        </ul>
+      </div>
+
+      <!-- Pincode Delivery -->
+      <form class="mb-3">
+        <label class="form-label">Check Delivery:</label>
+        <div class="input-group">
+          <input type="text" class="form-control" id="pincode" placeholder="Enter Pincode">
+          <button class="btn btn-outline-primary" type="button" onclick="estimateDelivery()">Check</button>
+        </div>
+        <small id="delivery-estimate" class="form-text text-muted mt-1"></small>
+      </form>
+
+      <div class="mb-2">
+        <span class="badge bg-success">✅ Cash on Delivery Available</span>
+      </div>
+
+      <!-- Payment Icons -->
+      <div class="mb-3">
+        <p class="fw-semibold mb-1">Payment Options:</p>
+        <img src="https://img.icons8.com/color/48/000000/visa.png" width="36" />
+        <img src="https://img.icons8.com/color/48/000000/mastercard.png" width="36" />
+        <img src="https://img.icons8.com/color/48/000000/google-pay-india.png" width="36" />
+        <img src="https://img.icons8.com/color/48/000000/paytm.png" width="36" />
+      </div>
+
+      <!-- Buttons -->
+      <form action="{% url 'add_to_cart' product.id %}" method="post" class="d-flex gap-3 mt-4">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-warning btn-lg fw-bold shadow-sm">🛒 Add to Cart</button>
+        <a href="#" class="btn btn-danger btn-lg fw-bold shadow-sm">⚡ Buy Now</a>
+      </form>
+
+      <a href="{% url 'home' %}" class="btn btn-link mt-3">← Back to Home</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function estimateDelivery() {
+    const pincode = document.getElementById('pincode').value;
+    const estimate = document.getElementById('delivery-estimate');
+
+    if (/^\d{6}$/.test(pincode)) {
+      estimate.textContent = `Estimated delivery: ${new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toDateString()}`;
+    } else {
+      estimate.textContent = "Enter a valid 6-digit pincode.";
+    }
+  }
+</script>
+{% endblock %}

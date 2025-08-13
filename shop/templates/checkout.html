@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="bg-white p-4 rounded shadow-sm">
+    <h3 class="mb-4">Checkout</h3>
+    <!-- Saved Address Dropdown -->
+<div class="mb-3">
+  <label class="form-label">Select Saved Address</label>
+  <select class="form-select" id="savedAddressSelect">
+    <option value="">-- Select Address --</option>
+    {% for addr in saved_addresses %}
+      <option value="{{ addr.name }}|{{ addr.street }}|{{ addr.city }}|{{ addr.state }}|{{ addr.pincode }}">
+        {{ addr.name }}, {{ addr.street }}, {{ addr.city }} - {{ addr.pincode }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
+
+<!-- Form Begins -->
+<form method="post">
+  {% csrf_token %}
+  
+  <!-- Your same fields -->
+  <div class="mb-3">
+    <label for="name">Full Name</label>
+    <input type="text" class="form-control" name="name" id="nameInput" required>
+  </div>
+
+  <div class="mb-3">
+    <label for="street">Street Address</label>
+    <input type="text" class="form-control" name="street" id="streetInput" required>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <label for="city">City</label>
+      <input type="text" class="form-control" name="city" id="cityInput" required>
+    </div>
+    <div class="col-md-4">
+      <label for="state">State</label>
+      <input type="text" class="form-control" name="state" id="stateInput" required>
+    </div>
+    <div class="col-md-2">
+      <label for="pincode">Pincode</label>
+      <input type="text" class="form-control" name="pincode" id="pincodeInput" pattern="[0-9]{6}" required>
+    </div>
+  </div>
+
+  <!-- Save checkbox -->
+  <div class="form-check mb-3">
+    <input class="form-check-input" type="checkbox" name="save_address" id="saveAddressCheck">
+    <label class="form-check-label" for="saveAddressCheck">
+      Save this address for future orders
+    </label>
+  </div>
+
+  <!-- Delivery / Payment Options as before -->
+
+  <!-- Delivery Options -->
+      <!-- Display-only Expected Delivery -->
+        <div class="mb-3">
+        <label class="form-label">Expected Delivery</label>
+        <div class="alert alert-success mb-0 fw-semibold" id="expectedDeliveryDisplay">
+            Loading expected delivery date...
+        </div>
+        </div>
+
+        <!-- Hidden fields for backend form -->
+        <input type="hidden" name="delivery_date" id="deliveryDateInput">
+        <input type="hidden" name="delivery_time" id="deliveryTimeInput">
+
+      <!-- Payment Method -->
+      <div class="mb-3">
+        <label class="form-label">Payment Method</label>
+        <select class="form-select" name="payment_method" required>
+          <option value="">-- Select Payment Option --</option>
+          <option value="cod">Cash on Delivery</option>
+          <option value="upi">UPI</option>
+          <option value="card">Credit / Debit Card</option>
+        </select>
+      </div>
+
+      <!-- Delivery Estimate Info -->
+      <div class="alert alert-info mt-3">
+        <strong>Note:</strong> Estimated delivery: 3–7 working days based on your pincode.
+      </div>
+
+  <button type="submit" class="btn btn-primary w-100">Place Order</button>
+</form>
+
+<!-- JavaScript -->
+<script>
+  // Autofill address on selection
+  const addressSelect = document.getElementById("savedAddressSelect");
+  addressSelect.addEventListener("change", function () {
+    if (this.value) {
+      const [name, street, city, state, pincode] = this.value.split("|");
+      document.getElementById("nameInput").value = name;
+      document.getElementById("streetInput").value = street;
+      document.getElementById("cityInput").value = city;
+      document.getElementById("stateInput").value = state;
+      document.getElementById("pincodeInput").value = pincode;
+    }
+  });
+
+    function getRandomDeliveryDateTime() {
+    const today = new Date();
+    const offset = Math.floor(Math.random() * 5) + 3; // 3 to 7 days from now
+    today.setDate(today.getDate() + offset);
+
+    const hour = Math.floor(Math.random() * 12) + 9; // 9 AM to 8 PM
+    const minutes = [0, 15, 30, 45][Math.floor(Math.random() * 4)];
+    today.setHours(hour, minutes, 0);
+
+    // For display
+    const display = today.toLocaleString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+
+    // For form submission
+    const deliveryDate = today.toISOString().split('T')[0]; // yyyy-mm-dd
+    const deliveryTime = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+
+    return { display, deliveryDate, deliveryTime };
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const { display, deliveryDate, deliveryTime } = getRandomDeliveryDateTime();
+
+    document.getElementById("expectedDeliveryDisplay").textContent = display;
+    document.getElementById("deliveryDateInput").value = deliveryDate;
+    document.getElementById("deliveryTimeInput").value = deliveryTime;
+  });
+
+</script>
+
+  </div>
+</div>
+
+<style>
+  body {
+    background-color: #f8f9fa;
+  }
+</style>
+{% endblock %}
