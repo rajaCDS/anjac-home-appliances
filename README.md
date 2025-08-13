@@ -73,7 +73,7 @@ ANJAC-HOME-APPLIANCES/
 
 ### 1️⃣ Clone the Repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/anjac-home-appliances.git
+git clone https://github.com/rajaCDS/anjac-home-appliances.git
 cd anjac-home-appliances
 ```
 
