@@ -66,4 +66,12 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "in-v3.mailjet.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get("MAILJET_API_KEY", "")
+EMAIL_HOST_PASSWORD = os.environ.get("MAILJET_API_SECRET", "")
+DEFAULT_FROM_EMAIL = "ANJAC Home Appliances <rajja.s1994@gmail.com>"
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

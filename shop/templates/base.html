@@ -83,9 +83,16 @@
             {% endif %}
           </a>
 
+
         {% else %}
-          <a href="{% url 'login' %}" class="text-white">Login</a>
-          <a href="{% url 'register' %}" class="text-white">Register</a>
+          <a href="{% url 'cart' %}" class="position-relative text-white">
+            <i class="fa-solid fa-cart-shopping nav-icon"></i> Cart
+            {% if cart_count > 0 %}
+              <span class="badge badge-notify rounded-pill">{{ cart_count }}</span>
+            {% endif %}
+          </a>
+          <!-- <a href="{% url 'login' %}" class="text-white">Login</a>
+          <a href="{% url 'register' %}" class="text-white">Register</a> -->
         {% endif %}
       </div>
     </div>
