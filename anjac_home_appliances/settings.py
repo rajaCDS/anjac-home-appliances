@@ -14,7 +14,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Your app
     'shop',
+
+    # Allauth for Google SSO
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 MIDDLEWARE = [
@@ -23,8 +32,15 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    
+    # Add this line ✅
+    'allauth.account.middleware.AccountMiddleware',
+
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
+    # Optional: If you want current site lookup
+    'django.contrib.sites.middleware.CurrentSiteMiddleware',
 ]
 
 ROOT_URLCONF = 'anjac_home_appliances.urls'
@@ -37,7 +53,7 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
-                'django.template.context_processors.request',
+                'django.template.context_processors.request',  # ✅ needed for allauth
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -67,11 +83,21 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "in-v3.mailjet.com"
+EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.environ.get("MAILJET_API_KEY", "")
-EMAIL_HOST_PASSWORD = os.environ.get("MAILJET_API_SECRET", "")
+EMAIL_HOST_USER = "rajja.s1994@gmail.com"
+EMAIL_HOST_PASSWORD = "wpkqqskgkxtouqvx"
 DEFAULT_FROM_EMAIL = "ANJAC Home Appliances <rajja.s1994@gmail.com>"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# 🔑 Allauth config
+SITE_ID = 2
+LOGIN_REDIRECT_URL = '/'     # after Google login → home
+LOGOUT_REDIRECT_URL = '/'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # keep OTP login working
+    'allauth.account.auth_backends.AuthenticationBackend',
+]

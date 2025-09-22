@@ -2,6 +2,7 @@
 # shop/views.py
 # ------------------------------
 
+import site
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, get_user_model
@@ -18,6 +19,9 @@ from .models import Product, Category, Order, CartItem, Cart, SavedAddress, Wish
 from django.http import HttpResponse
 from datetime import datetime
 from .forms import RegisterForm
+from allauth.socialaccount.models import SocialApp
+from django.contrib.sites.models import Site
+from allauth.socialaccount.providers import registry
 import random
 import time
 
@@ -84,6 +88,7 @@ def add_to_cart(request, pk):
 
 # @login_required
 def cart(request):
+    print("Cart view accessed")
     if request.user.is_authenticated:
         # Logged-in user → use DB cart
         cart, _ = Cart.objects.get_or_create(user=request.user)
@@ -138,7 +143,7 @@ def get_cart_total(user):
 @login_required
 def checkout(request):
     saved_addresses = SavedAddress.objects.filter(user=request.user)
-    cart = Cart.objects.get(user=request.user)
+    cart, _ = Cart.objects.get_or_create(user=request.user)  # ✅ ensures a cart exists
 
     if request.method == 'POST':
         name = request.POST['name']
@@ -203,19 +208,33 @@ def checkout(request):
     })
 
 def send_login_otp(email, otp):
-    subject = "Your MyStore Login OTP"
+    subject = "Your ANJAC Login OTP"
     message = f"Your OTP is {otp}. Valid for 5 minutes."
-    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email])
+    send_mail(subject, message, "ANJAC Home Appliances <rajja.s1994@gmail.com>", [email])
+
 
 def login_view(request):
-    print(f"Login view method: {request.method}")  # Debugging line
+    print("Login view accessed")
+    social_providers = []
+
+    site = Site.objects.get_current()
+
+    # ✅ Correct way using provider_map
+    for provider_id, provider_class in registry.provider_map.items():
+        if SocialApp.objects.filter(provider=provider_id, sites=site).exists():
+            social_providers.append(provider_class)
+
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
         user = authenticate(request, username=username, password=password)
 
         if user:
-            # OTP rate limit
+            # OTP rate limit and sending
+
+            OTP_TTL_SECONDS = 5 * 60
+            RATE_LIMIT_KEY = "otp_rate_{user_id}"
+            
             rate_key = RATE_LIMIT_KEY.format(user_id=user.pk)
             last_sent = cache.get(rate_key)
             if last_sent and time.time() - last_sent < 60:
@@ -226,24 +245,35 @@ def login_view(request):
             cache.set(f"login_otp_{user.pk}", otp, OTP_TTL_SECONDS)
             cache.set(rate_key, time.time(), 60)  # 1 min block
 
-            send_login_otp(user.email, otp)
-            request.session["pre_auth_user_id"] = user.pk
+            # Send OTP email function
+            send_mail(
+                "Your ANJAC Login OTP",
+                f"Your OTP is {otp}. Valid for 5 minutes.",
+                "ANJAC Home Appliances <rajja.s1994@gmail.com>",
+                [user.email],
+            )
 
-            # Next page after login (checkout or home)
+            request.session["pre_auth_user_id"] = user.pk
             next_url = request.POST.get("next") or request.GET.get("next", "/")
             return render(request, "otp_verify.html", {"email": user.email, "next": next_url})
         else:
             messages.error(request, "Invalid credentials")
 
-    context = {"next": request.GET.get("next", "")}
-    return render(request, "login.html", context)
+    return render(request, "registration/login.html", {
+        "next": request.GET.get("next", ""),
+        "socialaccount_providers": social_providers
+    })
 
 
 def otp_verify(request):
+    print("OTP verify view accessed")
     if request.method == "POST":
         otp = request.POST.get("otp")
         next_url = request.POST.get("next") or "/"
         user_id = request.session.get("pre_auth_user_id")
+
+        print("DEBUG: user_id from session =", user_id)
+        print("DEBUG: otp entered =", otp)
 
         if not user_id:
             messages.error(request, "Session expired. Please login again.")
@@ -252,7 +282,9 @@ def otp_verify(request):
         cache_key = f"login_otp_{user_id}"
         expected_otp = cache.get(cache_key)
 
-        if otp == expected_otp:
+        print("DEBUG: expected OTP from cache =", expected_otp)
+
+        if otp and expected_otp and otp.strip() == expected_otp.strip():
             User = get_user_model()
             user = User.objects.get(pk=user_id)
             login(request, user)
@@ -261,7 +293,7 @@ def otp_verify(request):
             cache.delete(cache_key)
             request.session.pop("pre_auth_user_id", None)
 
-            # Redirect to next page
+            messages.success(request, "✅ Login successful!")
             return redirect(next_url)
         else:
             messages.error(request, "Invalid or expired OTP")
@@ -269,7 +301,8 @@ def otp_verify(request):
 
     # GET request fallback
     next_url = request.GET.get("next", "/")
-    return render(request, "otp_verify.html", {"next": next_url}) 
+    return render(request, "otp_verify.html", {"next": next_url})
+
 
 def register(request):
     if request.method == 'POST':
@@ -367,3 +400,6 @@ def wishlist_action(request):
                 Wishlist.objects.filter(user=request.user, product=product).delete()
 
     return redirect('cart')
+
+otp_login = login_view
+verify_otp = otp_verify

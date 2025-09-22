@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load static %}
+{% load socialaccount %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="mb-4 text-center">Login</h2>
+
+        <!-- OTP / Username & Password Form -->
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+          {% endif %}
+
+          <div class="mb-3">
+            <label for="id_username" class="form-label">Username</label>
+            <input type="text" name="username" autofocus required id="id_username"
+                   class="form-control" placeholder="Enter your username">
+          </div>
+
+          <div class="mb-3">
+            <label for="id_password" class="form-label">Password</label>
+            <input type="password" name="password" required id="id_password"
+                   class="form-control" placeholder="Enter your password">
+          </div>
+
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+
+          <button type="submit" class="btn btn-success w-100">Login</button>
+        </form>
+
+        <hr class="my-4">
+
+        <!-- Social Login Buttons -->
+        <div class="text-center">
+          {% providers_media_js %}
+          {% for provider in socialaccount_providers %}
+            <a href="{% provider_login_url provider.id %}" class="btn btn-primary w-100 mb-2">
+              <i class="bi bi-google"></i> Login
+            </a>
+          {% empty %}
+            <p>No social login providers configured.</p>
+          {% endfor %}
+        </div>
+
+        <div class="text-center mt-3">
+          <p>Don't have an account? <a href="{% url 'register' %}">Register</a></p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

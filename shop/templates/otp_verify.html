@@ -1,14 +1,33 @@
 {% extends "base.html" %}
+
 {% block content %}
-<h2>Enter OTP</h2>
-<p>We have sent a 6-digit OTP to {{ email }}. Please check your inbox.</p>
+  <div class="row justify-content-center">
+      <div class="col-md-6">
+          <div class="card shadow-sm">
+              <div class="card-body">
+                  <h2 class="mb-4 text-center">OTP Verification</h2>
+                  <form method="post">
+                      {% csrf_token %}
+                      {% if next %}
+                          <input type="hidden" name="next" value="{{ next }}">
+                      {% endif %}
 
-<form method="post">
-  {% csrf_token %}
-  <input type="hidden" name="next" value="{{ next }}">
-  <label>OTP</label>
-  <input type="text" name="otp" maxlength="6" required><br>
-  <button type="submit">Verify OTP</button>
-</form>
+                      <div class="mb-3">
+                          <label for="id_otp" class="form-label">Enter OTP</label>
+                          <input type="text" name="otp" required id="id_otp"
+                                class="form-control" placeholder="Enter the OTP sent to your email">
+                      </div>
 
+                      {% if messages %}
+                          {% for message in messages %}
+                              <div class="alert alert-danger">{{ message }}</div>
+                          {% endfor %}
+                      {% endif %}
+
+                      <button type="submit" class="btn btn-primary w-100">Verify OTP</button>
+                  </form>
+              </div>
+          </div>
+      </div>
+  </div>
 {% endblock %}

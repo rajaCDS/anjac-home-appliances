@@ -1,3 +1,4 @@
+# app/urls.py
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -5,8 +6,8 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('shop.urls')),
-    path('accounts/', include('django.contrib.auth.urls')),
+    path('', include('shop.urls')),                     # your custom routes
+    path('accounts/', include('allauth.urls')),         # ✅ Google SSO + other providers
 ]
 
 if settings.DEBUG:
