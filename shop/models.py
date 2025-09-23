@@ -54,6 +54,8 @@ class Order(models.Model):
 
     order_date = models.DateTimeField(auto_now_add=True)
 
+    razorpay_order_id = models.CharField(max_length=100, blank=True, null=True)
+
     def __str__(self):
         return f"Order #{self.id} by {self.customer_name}"
 

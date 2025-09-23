@@ -90,6 +90,9 @@ EMAIL_HOST_USER = "rajja.s1994@gmail.com"
 EMAIL_HOST_PASSWORD = "wpkqqskgkxtouqvx"
 DEFAULT_FROM_EMAIL = "ANJAC Home Appliances <rajja.s1994@gmail.com>"
 
+RAZORPAY_KEY_ID = "rzp_test_RL6W1J0zhhld9Q"
+RAZORPAY_KEY_SECRET = "atsO0GpS6vykG6W5y5rDrB0H"
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # 🔑 Allauth config

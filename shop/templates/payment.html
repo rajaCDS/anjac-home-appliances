@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4 text-center">
+    <h3>Complete your payment</h3>
+    <p>Amount: ₹{{ order.total_amount }}</p>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+    var options = {
+        "key": "{{ razorpay_key_id }}",
+        "amount": "{{ razorpay_order.amount }}", // in paise
+        "currency": "INR",
+        "name": "ANJAC Home Appliances",
+        "description": "Order #{{ order.id }}",
+        "order_id": "{{ razorpay_order.id }}",
+        "handler": function (response){
+            fetch("{% url 'razorpay_success' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: new URLSearchParams(response)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success'){
+                    window.location.href = data.redirect_url;
+                } else {
+                    alert(data.message || "Payment failed!");
+                }
+            });
+        },
+        "prefill": {
+            "name": "{{ order.customer_name }}",
+            "email": "{{ order.customer_email }}"
+        },
+        "theme": {
+            "color": "#0d6efd"
+        }
+    };
+    var rzp = new Razorpay(options);
+    rzp.open();
+});
+</script>
+{% endblock %}

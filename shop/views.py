@@ -6,6 +6,7 @@ import site
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, get_user_model
+from django.contrib.auth.backends import ModelBackend
 from django.core.mail import send_mail
 from django.core.cache import cache
 from django.urls import reverse
@@ -23,34 +24,51 @@ from allauth.socialaccount.models import SocialApp
 from django.contrib.sites.models import Site
 from allauth.socialaccount.providers import registry
 import random
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import razorpay
 import time
 
 OTP_TTL_SECONDS = 5 * 60
 RATE_LIMIT_KEY = "otp_rate_{user_id}"
 
 
+from django.core.paginator import Paginator
+from decimal import Decimal
+import random
+from .models import Product, Category  # make sure Category model iruku
+
 def home(request):
     products = Product.objects.all()
+    categories = Category.objects.all()  # for menu
 
-    # Filtering
+    # Category filter
+    category_id = request.GET.get("category")
+    if category_id:
+        products = products.filter(category_id=category_id)
+
+    # Price filter
     price = request.GET.get("price")
-    rating = request.GET.get("rating")
     if price:
         low, high = map(int, price.split("-"))
         products = products.filter(price__gte=low, price__lte=high)
+
+    # Rating filter
+    rating = request.GET.get("rating")
     if rating:
         products = products.filter(static_rating__gte=int(rating))
 
+    # Search filter
     query = request.GET.get('q')
     if query:
-        products = products.filter(name__icontains=query) 
+        products = products.filter(name__icontains=query)
 
-    # Add dummy static rating and review count
+    # Dummy fields for discount/rating display
     for p in products:
         p.static_rating = random.randint(3, 5)
         p.review_count = random.randint(20, 120)
-        multiplier = Decimal(str(random.uniform(1.1, 1.3)))  # ✅ convert float to Decimal
-        p.original_price = (p.price * multiplier).quantize(Decimal('0'))  # Round to nearest ₹
+        multiplier = Decimal(str(random.uniform(1.1, 1.3)))
+        p.original_price = (p.price * multiplier).quantize(Decimal('0'))
         p.discount_percent = 100 - int((p.price / p.original_price) * 100)
 
     # Pagination
@@ -58,7 +76,11 @@ def home(request):
     page = request.GET.get("page")
     products = paginator.get_page(page)
 
-    return render(request, 'home.html', {'products': products})
+    return render(request, 'home.html', {
+        'products': products,
+        'categories': categories,
+        'selected_category': category_id,
+    })
 
 
 def product_detail(request, pk):
@@ -143,9 +165,11 @@ def get_cart_total(user):
 @login_required
 def checkout(request):
     saved_addresses = SavedAddress.objects.filter(user=request.user)
-    cart, _ = Cart.objects.get_or_create(user=request.user)  # ✅ ensures a cart exists
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
     if request.method == 'POST':
+        # Collect form fields
         name = request.POST['name']
         street = request.POST['street']
         city = request.POST['city']
@@ -155,21 +179,20 @@ def checkout(request):
         delivery_time = request.POST['delivery_time']
         payment_method = request.POST['payment_method']
 
-        cart_summary_string = get_cart_summary(request.user)
-        calculated_cart_total = get_cart_total(request.user)
+        cart_total = get_cart_total(request.user)
+        amount_paise = int(cart_total * 100)  # Razorpay uses paisa
 
-        # Save address if requested
-        if request.POST.get("save_address") == "on":
-            SavedAddress.objects.create(
-                user=request.user,
-                name=name,
-                street=street,
-                city=city,
-                state=state,
-                pincode=pincode
-            )
+        # Create Razorpay order if payment is not COD
+        razorpay_order = None
+        razorpay_order_id = None
+        if payment_method in ['upi', 'card']:
+            razorpay_order = client.order.create({
+                "amount": amount_paise,
+                "currency": "INR",
+                "payment_capture": 1
+            })
 
-        # Create order
+        # Save order in DB
         order = Order.objects.create(
             user=request.user,
             customer_name=name,
@@ -181,13 +204,13 @@ def checkout(request):
             delivery_date=delivery_date,
             delivery_time=delivery_time,
             payment_method=payment_method,
-            ordered_items=cart_summary_string,
-            total_amount=calculated_cart_total
+            ordered_items=get_cart_summary(request.user),
+            total_amount=cart_total,
+            razorpay_order_id=razorpay_order_id
         )
 
-        # Create order items
-        cart_items = CartItem.objects.filter(cart=cart)
-        for item in cart_items:
+        # Save order items
+        for item in CartItem.objects.filter(cart=cart):
             OrderItem.objects.create(
                 order=order,
                 product=item.product,
@@ -197,13 +220,22 @@ def checkout(request):
                 size=getattr(item, 'size', '')
             )
 
-        # Clear the cart
-        cart_items.delete()
+        # Clear cart
+        CartItem.objects.filter(cart=cart).delete()
 
-        messages.success(request, 'Order placed successfully! 🎉')
-        return redirect('orders')
+        if payment_method == "cod":
+            messages.success(request, "Order placed successfully! 🎉")
+            return redirect("orders")
 
-    return render(request, 'checkout.html', {
+        # Send Razorpay details to frontend
+        context = {
+            "order": order,
+            "razorpay_order": razorpay_order,
+            "razorpay_key_id": settings.RAZORPAY_KEY_ID,
+        }
+        return render(request, "payment.html", context)
+
+    return render(request, "checkout.html", {
         'saved_addresses': saved_addresses
     })
 
@@ -287,7 +319,9 @@ def otp_verify(request):
         if otp and expected_otp and otp.strip() == expected_otp.strip():
             User = get_user_model()
             user = User.objects.get(pk=user_id)
-            login(request, user)
+
+            # ✅ Specify backend explicitly
+            login(request, user, backend=settings.AUTHENTICATION_BACKENDS[0])
 
             # Clear OTP and session
             cache.delete(cache_key)
@@ -299,7 +333,6 @@ def otp_verify(request):
             messages.error(request, "Invalid or expired OTP")
             return redirect("login")
 
-    # GET request fallback
     next_url = request.GET.get("next", "/")
     return render(request, "otp_verify.html", {"next": next_url})
 
@@ -309,7 +342,8 @@ def register(request):
         form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)
+            # ✅ explicitly set backend
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')
     else:
         form = RegisterForm()
@@ -400,6 +434,36 @@ def wishlist_action(request):
                 Wishlist.objects.filter(user=request.user, product=product).delete()
 
     return redirect('cart')
+
+@csrf_exempt
+def razorpay_success(request):
+    print("Razorpay webhook received:", request.path, request.method, request.POST)
+    if request.method == "POST":
+        data = request.POST
+        razorpay_payment_id = data.get('razorpay_payment_id')
+        razorpay_order_id = data.get('razorpay_order_id')
+        razorpay_signature = data.get('razorpay_signature')
+
+        # Verify signature
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+        try:
+            client.utility.verify_payment_signature({
+                'razorpay_order_id': razorpay_order_id,
+                'razorpay_payment_id': razorpay_payment_id,
+                'razorpay_signature': razorpay_signature
+            })
+        except razorpay.errors.SignatureVerificationError:
+            return JsonResponse({'status': 'error', 'message': 'Payment verification failed'}, status=400)
+
+        # Mark the order as paid
+        try:
+            # print(Order.objects.filter(razorpay_order_id=razorpay_order_id).exists())
+            # order = Order.objects.get(razorpay_order_id=razorpay_order_id)
+            # order.order_status = 'pending'  # Or 'paid' if you add a paid status
+            # order.save()
+            return JsonResponse({'status': 'success', 'redirect_url': '/orders/'})
+        except Order.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Order not found'}, status=404)
 
 otp_login = login_view
 verify_otp = otp_verify

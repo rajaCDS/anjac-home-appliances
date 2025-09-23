@@ -5,27 +5,27 @@
       <div class="col-md-6">
           <div class="card shadow-sm">
               <div class="card-body">
-                  <h2 class="mb-4 text-center">OTP Verification</h2>
-                  <form method="post">
-                      {% csrf_token %}
-                      {% if next %}
-                          <input type="hidden" name="next" value="{{ next }}">
-                      {% endif %}
+                    <h2 class="mb-4 text-center">OTP Verification</h2>
+                    <form method="post" action="{% url 'verify_otp' %}">
+                        {% csrf_token %}
+                        {% if next %}
+                            <input type="hidden" name="next" value="{{ next }}">
+                        {% endif %}
 
-                      <div class="mb-3">
-                          <label for="id_otp" class="form-label">Enter OTP</label>
-                          <input type="text" name="otp" required id="id_otp"
+                        <div class="mb-3">
+                            <label for="id_otp" class="form-label">Enter OTP</label>
+                            <input type="text" name="otp" required id="id_otp"
                                 class="form-control" placeholder="Enter the OTP sent to your email">
-                      </div>
+                        </div>
 
-                      {% if messages %}
-                          {% for message in messages %}
-                              <div class="alert alert-danger">{{ message }}</div>
-                          {% endfor %}
-                      {% endif %}
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-danger">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
 
-                      <button type="submit" class="btn btn-primary w-100">Verify OTP</button>
-                  </form>
+                        <button type="submit" class="btn btn-primary w-100">Verify OTP</button>
+                    </form>
               </div>
           </div>
       </div>

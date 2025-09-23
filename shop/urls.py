@@ -12,6 +12,8 @@ urlpatterns = [
     path('cart/', views.cart, name='cart'),
     path('checkout/', views.checkout, name='checkout'),
     path('add-to-cart/<int:pk>/', views.add_to_cart, name='add_to_cart'),
+    path('razorpay/success/', views.razorpay_success, name='razorpay_success'),
+    path('razorpay/success', views.razorpay_success),
 
     # User Registration
     path('register/', views.register, name='register'),
