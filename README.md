@@ -153,26 +153,10 @@ We use django-jazzmin
 1️⃣ Install Jazzmin
 pip install django-jazzmin
 
-2️⃣ Update INSTALLED_APPS in settings.py
-INSTALLED_APPS = [
-    "jazzmin",   # Must be the first entry
-    "django.contrib.admin",
-    "django.contrib.auth",
-    ...
-]
 
 3️⃣ Run Collectstatic
 python manage.py collectstatic --noinput
 
-4️⃣ (Optional) Customize Jazzmin
-JAZZMIN_SETTINGS = {
-    "site_title": "ANJAC Home Appliances Admin",
-    "site_header": "ANJAC Admin Panel",
-    "site_brand": "ANJAC",
-    "welcome_sign": "Welcome to ANJAC Admin",
-    "copyright": "ANJAC © 2025",
-    "show_ui_builder": True,
-}
 
 5️⃣ Run the Server
 python manage.py runserver
