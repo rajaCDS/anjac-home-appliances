@@ -8,79 +8,83 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    # 🎨 Modern Admin Theme
+    "jazzmin",   # Must be first for overriding default admin
+
+    # Default Django apps
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
 
     # Your app
-    'shop',
+    "shop",
 
     # Allauth for Google SSO
-    'django.contrib.sites',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
+    "django.contrib.sites",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
     
-    # Add this line ✅
-    'allauth.account.middleware.AccountMiddleware',
+    # ✅ Needed for Allauth
+    "allauth.account.middleware.AccountMiddleware",
 
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
     
     # Optional: If you want current site lookup
-    'django.contrib.sites.middleware.CurrentSiteMiddleware',
+    "django.contrib.sites.middleware.CurrentSiteMiddleware",
 ]
 
-ROOT_URLCONF = 'anjac_home_appliances.urls'
+ROOT_URLCONF = "anjac_home_appliances.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'shop' / 'templates'],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',  # ✅ needed for allauth
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "shop" / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",  # ✅ needed for allauth
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'anjac_home_appliances.wsgi.application'
+WSGI_APPLICATION = "anjac_home_appliances.wsgi.application"
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 
 AUTH_PASSWORD_VALIDATORS = []
 
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Asia/Kolkata'
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
@@ -93,14 +97,43 @@ DEFAULT_FROM_EMAIL = "ANJAC Home Appliances <rajja.s1994@gmail.com>"
 RAZORPAY_KEY_ID = "rzp_test_RL6W1J0zhhld9Q"
 RAZORPAY_KEY_SECRET = "atsO0GpS6vykG6W5y5rDrB0H"
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # 🔑 Allauth config
 SITE_ID = 2
-LOGIN_REDIRECT_URL = '/'     # after Google login → home
-LOGOUT_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = "/"     # after Google login → home
+LOGOUT_REDIRECT_URL = "/"
 
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',  # keep OTP login working
-    'allauth.account.auth_backends.AuthenticationBackend',
+    "django.contrib.auth.backends.ModelBackend",  # keep OTP login working
+    "allauth.account.auth_backends.AuthenticationBackend",
 ]
+
+# 🎨 Jazzmin Customization
+JAZZMIN_SETTINGS = {
+    "site_title": "ANJAC Home Appliances Admin",
+    "site_header": "ANJAC Admin Panel",
+    "site_brand": "ANJAC",
+    "welcome_sign": "Welcome to ANJAC Admin",
+    "copyright": "ANJAC © 2025",
+
+    # App icons (FontAwesome)
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "shop.Product": "fas fa-blender",
+        "shop.Order": "fas fa-shopping-cart",
+        "shop.Customer": "fas fa-user",
+    },
+
+    # UI tweaks
+    "show_ui_builder": True,   # allow live theme changes
+}
+
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# 👉 Add this line
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
